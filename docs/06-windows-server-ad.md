@@ -18,7 +18,7 @@ Déployer un contrôleur de domaine Active Directory sur Windows Server 2025, cr
 
 | Paramètre | Valeur |
 |-----------|--------|
-| VM ID | `102` |
+| VM ID | `200` |
 | Nom | `WS2025-DC01` |
 | OS | Windows Server 2025 Standard (expérience utilisateur) |
 | Disque | `60 GB` |
