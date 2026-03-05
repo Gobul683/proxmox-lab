@@ -2,75 +2,36 @@
 
 ## Objectif
 
-Déployer pfSense comme firewall central du lab. Il sera le seul point d'entrée/sortie entre le réseau domestique (WAN) et les réseaux virtuels internes (LAN, DMZ, ATTACK).
+Déployer pfSense comme firewall central du lab. Il sera le seul point d'entrée/sortie entre le réseau domestique (WAN) et les réseaux virtuels internes (LAN, DMZ, ATTACK, MGMT).
 
 ## Résultat attendu
 
-- VM pfSense opérationnelle avec 4 interfaces réseau
-- pfSense accessible depuis le LAN sur `192.168.10.1`
+- VM pfSense opérationnelle avec 5 interfaces réseau
+- pfSense accessible depuis le LAN sur `https://10.0.0.1`
 - Routage inter-réseaux fonctionnel
 
 ---
 
 ## Procédure
 
-### Téléchargement de l'ISO
-
-Dans Proxmox : **Datacenter > [nœud] > local > ISO Images > Download from URL**
-
-```
-https://nyifiles.netgate.com/mirror/downloads/pfSense-CE-2.7.2-RELEASE-amd64.iso.gz
-```
-
-> 📸 `assets/02-iso-download.png`
-
----
-
 ### Création de la VM
 
-**Datacenter > Créer VM**
+**Datacenter > Créer VM** avec les paramètres suivants :
 
-#### Général
 | Paramètre | Valeur |
 |-----------|--------|
-| VM ID | `100` |
+| VM ID | `105` |
 | Nom | `pfSense` |
-
-#### OS
-| Paramètre | Valeur |
-|-----------|--------|
 | ISO | `pfSense-CE-2.7.2-RELEASE-amd64.iso` |
-| Type | Other |
-
-#### Système
-| Paramètre | Valeur |
-|-----------|--------|
+| Type OS | Other |
 | BIOS | Default (SeaBIOS) |
 | Machine | Default (i440fx) |
 | SCSI Controller | VirtIO SCSI single |
-
-#### Disque
-| Paramètre | Valeur |
-|-----------|--------|
-| Bus | SCSI |
-| Taille | `20 GB` |
-| Cache | Default |
-
-#### CPU & RAM
-| Paramètre | Valeur |
-|-----------|--------|
-| Cores | `2` |
+| Disque | `20 GB` |
+| CPU | 2 cores |
 | RAM | `2048 MB` |
 
-> 📸 `assets/02-vm-hardware.png`
-
----
-
-### Ajout des interfaces réseau
-
-Par défaut la VM est créée avec une seule interface. Il faut en ajouter 3 autres.
-
-**Hardware > Add > Network Device**
+Après création, ajout des 4 interfaces restantes via **Hardware > Add > Network Device** :
 
 | Interface | Bridge | Rôle |
 |-----------|--------|------|
@@ -78,57 +39,57 @@ Par défaut la VM est créée avec une seule interface. Il faut en ajouter 3 aut
 | `net1` | `vmbr1` | LAN |
 | `net2` | `vmbr2` | DMZ |
 | `net3` | `vmbr3` | ATTACK |
+| `net4` | `vmbr4` | MGMT |
 
-> 📸 `assets/02-vm-network-interfaces.png`
+![Hardware VM pfSense](../assets/02-pfsense-hardware.png)
 
 ---
 
 ### Installation de pfSense
 
-Démarrer la VM, ouvrir la console, suivre l'installeur :
+Démarrage de la VM, installation via la console :
 
 1. Accept → Install pfSense
-2. Keymap : French (ou laisser default)
-3. Partitioning : Auto (ZFS) → `da0`
-4. Reboot — retirer l'ISO avant le redémarrage
+2. Keymap → default
+3. Partitioning → Auto (ZFS) → Stripe → sélection du disque → OK
+4. Retrait de l'ISO avant le reboot : **Hardware > CD/DVD Drive > Do not use any media**
 
-**Proxmox > VM > Hardware > CD/DVD Drive > Do not use any media** avant le reboot.
-
-> 📸 `assets/02-pfsense-install-complete.png`
+![Installation complete](../assets/02-pfsense-install-complete.png)
 
 ---
 
-### Assignation des interfaces (console pfSense)
+### Configuration des interfaces
 
-Au premier démarrage, pfSense demande d'assigner les interfaces.
+Assignation des interfaces via le menu console (option `1`) :
 
 ```
 Should VLANs be set up now? → n
-Enter WAN interface: vtnet0
-Enter LAN interface: vtnet1
-Enter Optional 1: vtnet2
-Enter Optional 2: vtnet3
+WAN  → em0
+LAN  → em1
+OPT1 → em2
+OPT2 → em3
+OPT3 → em4
+Proceed? → y
 ```
 
-> 📸 `assets/02-pfsense-interface-assign.png`
+Configuration des IPs via l'option `2` :
+
+| Interface | IP | Masque | DHCP |
+|-----------|-----|--------|------|
+| LAN (em1) | `10.0.0.1` | `/16` | `10.0.1.0` → `10.0.254.254` |
+| OPT1 (em2) | `10.1.0.1` | `/16` | `10.1.1.0` → `10.1.254.254` |
+| OPT2 (em3) | `10.2.0.1` | `/16` | `10.2.1.0` → `10.2.254.254` |
+| OPT3 (em4) | `10.3.0.1` | `/16` | `10.3.1.0` → `10.3.254.254` |
 
 ---
 
 ## Validation
 
-Le menu principal de pfSense affiche les 5 interfaces avec leurs IPs :
+Le menu principal pfSense affiche les 5 interfaces actives :
 
-```
-WAN  → em0 → DHCP (IP box FAI)
-LAN  → em1 → 10.0.0.1/16
-OPT1 → em2 → 10.1.0.1/16  (DMZ)
-OPT2 → em3 → 10.2.0.1/16  (ATTACK)
-OPT3 → em4 → 10.3.0.1/16  (MGMT)
-```
+![Menu pfSense interfaces](../assets/02-pfsense-interfaces.png)
 
-> 📸 `assets/02-pfsense-interfaces.png`
-
-L'interface web pfSense est accessible depuis une VM sur le LAN : `https://10.0.0.1`
+L'interface web est accessible sur le LAN : `https://10.0.0.1`
 
 ---
 
