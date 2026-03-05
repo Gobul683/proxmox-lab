@@ -116,18 +116,19 @@ Enter Optional 2: vtnet3
 
 ## Validation
 
-Le menu principal de pfSense affiche les 4 interfaces avec leurs IPs :
+Le menu principal de pfSense affiche les 5 interfaces avec leurs IPs :
 
 ```
-WAN  → vtnet0 → DHCP (IP box FAI)
-LAN  → vtnet1 → 192.168.10.1/24
-OPT1 → vtnet2 → (à configurer)
-OPT2 → vtnet3 → (à configurer)
+WAN  → em0 → DHCP (IP box FAI)
+LAN  → em1 → 10.0.0.1/16
+OPT1 → em2 → 10.1.0.1/16  (DMZ)
+OPT2 → em3 → 10.2.0.1/16  (ATTACK)
+OPT3 → em4 → 10.3.0.1/16  (MGMT)
 ```
 
-> 📸 `assets/02-pfsense-menu.png`
+> 📸 `assets/02-pfsense-interfaces.png`
 
-L'interface web pfSense est accessible depuis une VM sur le LAN : `https://192.168.10.1`
+L'interface web pfSense est accessible depuis une VM sur le LAN : `https://10.0.0.1`
 
 ---
 
