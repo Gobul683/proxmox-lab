@@ -2,28 +2,26 @@
 
 ## Objectif
 
-Configurer pfSense via l'interface web : paramètres système, nommage des interfaces, règles firewall de base et sécurisation de l'accès à l'administration.
+Configurer pfSense via l'interface web : paramètres système, nommage des interfaces, règles firewall et DHCP.
 
 ## Résultat attendu
 
 - Interface web accessible depuis le LAN sur `https://10.0.0.1`
 - Interfaces nommées : WAN / LAN / DMZ / ATTACK / MGMT
-- Mot de passe admin changé
-- Accès WAN à l'interface web désactivé
+- Règles firewall inter-réseaux appliquées
+- DHCP actif sur toutes les interfaces internes
 
 ---
 
 ## Procédure
 
-### Accès temporaire depuis le WAN
+### Accès à l'interface web
 
-Par défaut pfSense bloque l'accès à son interface web depuis le WAN. Pour la configuration initiale, l'accès est temporairement activé depuis la console :
+Par défaut pfSense bloque l'accès depuis le WAN. Activation temporaire depuis la console :
 
 ```bash
 pfSsh.php playback enableallowallwan
 ```
-
-> ⚠️ Cette règle est désactivée immédiatement après la configuration initiale.
 
 ![Login pfSense](../assets/03-pfsense-webui-login.png)
 
@@ -41,39 +39,77 @@ pfSsh.php playback enableallowallwan
 | Secondary DNS | `8.8.4.4` |
 | Timezone | `Europe/Paris` |
 
----
-
-### Changement du mot de passe admin
-
-**System > User Manager > admin > Edit**
-
-Mot de passe par défaut `pfsense` remplacé par un mot de passe fort.
+Mot de passe admin par défaut `pfsense` remplacé via **System > User Manager**.
 
 ---
 
 ### Nommage des interfaces
 
-**Interfaces > OPT1 / OPT2 / OPT3** — renommage des interfaces optionnelles :
+**Interfaces > OPT1 / OPT2 / OPT3**
 
-| Interface | Nouveau nom | IP |
-|-----------|-------------|-----|
+| Interface | Nom | IP |
+|-----------|-----|----|
 | OPT1 | `DMZ` | `10.1.0.1/16` |
 | OPT2 | `ATTACK` | `10.2.0.1/16` |
 | OPT3 | `MGMT` | `10.3.0.1/16` |
 
 ![Interface Assignments](../assets/03-pfsense-interfaces-named.png)
 
+![Dashboard pfSense](../assets/03-pfsense-dashboard.png)
+
 ---
 
-### Dashboard
+### Règles Firewall
 
-![Dashboard pfSense](../assets/03-pfsense-dashboard.png)
+Politique appliquée :
+
+| Source | Destination | Action |
+|--------|-------------|--------|
+| LAN | Any | ✅ Pass |
+| DMZ | LAN | ❌ Block |
+| DMZ | Any | ✅ Pass |
+| ATTACK | LAN | ❌ Block |
+| ATTACK | Any | ✅ Pass |
+| MGMT | Any | ✅ Pass |
+
+> ⚠️ L'ordre des règles est important — pfSense applique la première règle qui correspond. Les règles Block doivent toujours être placées **au-dessus** des règles Pass.
+
+**DMZ :**
+
+![Règles DMZ](../assets/03-pfsense-rules-dmz.png)
+
+**ATTACK :**
+
+![Règles ATTACK](../assets/03-pfsense-rules-attack.png)
+
+**MGMT :**
+
+![Règles MGMT](../assets/03-pfsense-rules-mgmt.png)
+
+---
+
+### NAT
+
+**Firewall > NAT > Outbound** — mode **Automatic**. pfSense génère automatiquement les règles NAT pour tous les réseaux internes vers le WAN.
+
+---
+
+### DHCP
+
+**Services > DHCP Server** — actif sur toutes les interfaces internes :
+
+| Interface | Plage DHCP |
+|-----------|------------|
+| LAN | `10.0.1.0` → `10.0.254.254` |
+| DMZ | `10.1.1.0` → `10.1.254.254` |
+| ATTACK | `10.2.1.0` → `10.2.254.254` |
+| MGMT | `10.3.1.0` → `10.3.254.254` |
 
 ---
 
 ### Désactivation de l'accès WAN
 
-Une fois la configuration terminée, l'accès WAN est désactivé depuis la console :
+Une fois la configuration terminée :
 
 ```bash
 pfSsh.php playback disableallowallwan
@@ -85,8 +121,10 @@ pfSsh.php playback disableallowallwan
 
 - ✅ Interface web accessible sur `https://10.0.0.1` depuis le LAN
 - ✅ 5 interfaces nommées et actives
-- ✅ Accès WAN à l'interface web désactivé
-- ✅ Règles LAN par défaut actives (allow all)
+- ✅ Règles firewall inter-réseaux appliquées
+- ✅ DHCP actif sur toutes les interfaces
+- ✅ NAT automatique configuré
+- ✅ Accès WAN désactivé
 
 ---
 
