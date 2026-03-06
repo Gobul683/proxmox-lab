@@ -19,7 +19,7 @@ Déployer une VM Kali Linux sur le réseau ATTACK pour simuler des attaques et v
 
 | Paramètre | Valeur |
 |-----------|--------|
-| VM ID | `104` |
+| VM ID | `300` |
 | Nom | `Kali-Attack` |
 | OS | Kali Linux (latest) |
 | Disque | `40 GB` |
